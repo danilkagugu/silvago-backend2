@@ -1,39 +1,52 @@
 import { model, Schema } from "mongoose";
 
-const variationSchema = new Schema({
-  idTorgsoft: { type: Number, required: true, unique: true }, // ID з TorgSoft
-  fullName: { type: String, required: true }, // Назва товару
+const goodsSchema = new Schema(
+  {
+    goodId: { type: Number, required: true, unique: true }, // ID з Торгсофт (GoodID)
+    modelId: { type: Number, required: true }, // Спільний ID для групи товарів (ModelGoodID)
+    name: { type: String, required: true }, // Повна назва (GoodName)
+    modelName: { type: String, required: true }, // Назва моделі без об'єму (Description)
+    brand: { type: String, required: true }, // Бренд
+    country: { type: String, required: true }, // Країна виробник
 
-  volume: { type: Number, required: true }, // Об'єм, наприклад "1 мл", "30 мл"
-  tone: { type: String, required: false }, // Тон, наприклад "№23" або "№21"
-  retailPrice: { type: Number, required: true }, // Ціна
-  discountPrice: { type: Number, required: false }, // Ціна зі знижкою (опціонально)
-  discount: { type: String, required: false }, // Знижка у відсотках
-  quantity: { type: Number, required: true, default: 0 }, // Кількість в наявності
-  barcode: { type: String, required: true }, // Унікальний штрихкод
-  slug: { type: String, required: true, unique: true }, // Унікальний slug
-  image: { type: String, required: false }, // Фото для конкретної варіації
-  images: [{ type: String, required: false }], // колекція фото
-  isDefault: { type: Boolean, default: false }, // Чи є цей об'єм дефолтним
-});
+    // Ціни
+    retailPrice: { type: Number, required: true },
+    // wholesalePrice: { type: Number, required: true },
+    discountPrice: { type: Number, required: false },
+    // discount: { type: Number, default: 0 },
 
-const productSchema = new Schema({
-  modelName: { type: String, required: true }, // Назва моделі
-  modelId: { type: Number, required: true, unique: true }, // ID моделі
-  brand: { type: String, required: true }, // Бренд
-  country: { type: String, required: true }, // Країна виробник
-  measure: { type: String, required: true }, // Країна виробник
-  categories: [
-    {
-      idTorgsoft: { type: Number, required: true, unique: true },
-      name: { type: String, required: true },
-      slug: { type: String, required: true }, // Додаємо slug
-    },
-  ], // Категорії
-  variations: [variationSchema], // Варіації товару (об'єми/тони)
-  skinNeeds: { type: String, required: false },
-  randomOrderKey: {type: Number,required: true}
-});
-const Goods = model("goods", productSchema);
+    // Наявність
+    quantity: { type: Number, required: true },
+
+    // Характеристики
+    volume: { type: String, required: false }, // Напр. "200 мл" або "8 мл"
+    tone: { type: String, required: false }, // Відтінок, якщо є
+    measure: { type: String, required: false }, // Одиниця виміру (мл, г і т.д.)
+
+    // Ідентифікатори
+    barcode: { type: String, required: false },
+    //slug: { type: String, required: true, unique: true }, // URL-частина
+
+    // Зображення
+    image: { type: String, required: false },
+    // images: [{ type: String }],
+
+    // Категорії
+    // categories: [
+    //   {
+    //     idTorgsoft: { type: Number, required: true },
+    //     name: { type: String, required: true },
+    //     slug: { type: String, required: true },
+    //   },
+    // ],
+    categories: [{ type: String, required: true }], // Масив товару
+
+    // Додаткові поля
+    randomOrderKey: { type: Number, default: Math.random },
+  },
+  { timestamps: true }
+);
+
+const Goods = model("goods", goodsSchema);
 
 export default Goods;

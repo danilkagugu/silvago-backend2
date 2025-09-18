@@ -20,7 +20,7 @@ export async function downloadFiles() {
     });
 
     console.log("Підключено до FTP");
-    const savePath = "C:/Users/home/Documents/GitHub/silvago-backend/dataBase";
+    const savePath = "C:/Users/home/Documents/GitHub/silvago-backend2/dataBase";
 
     // Завантаження файлу TSGoods.trs
     await client.downloadTo(`${savePath}/TSGoods.trs`, "TSGoods.trs");
