@@ -12,7 +12,7 @@ import { Filter } from "../models/filters.js";
 // Шляхи до папок
 const sourceFolder = "C:\\Журнал Torgsoft";
 const destinationFolder =
-  "C:\\Users\\GGEZ\\Documents\\GitHub\\silvago-backend\\dataBase";
+  "C:\\Users\\GGEZ\\Documents\\GitHub\\silvago-backend2\\dataBase";
 // "C:\Users\GGEZ\Documents\GitHub\silvago-backend\dataBase"
 const goodsFile = path.join(destinationFolder, "TSGoods.trs");
 // const clientsFile = path.join(destinationFolder, "TSClients.trs");
@@ -87,9 +87,8 @@ export async function parseGoodsFile() {
       quantity: row[10],
       volume: row[12], // об'єм
       tone: row[13], // 12
-      categories: parseCategories(row[47]), // Категорія
+      //categories: parseCategories(row[47]), // Категорія
       productTypeFull: row[18], // Категорія
-      skinNeeds: row[51], // Потреби шкіри
       modelName: row[15], // назва моделі
       modelId: row[42], // Id моделі
       measure: row[39],
@@ -106,72 +105,72 @@ export async function parseGoodsFile() {
 
 export async function saveProductsToDb(products) {
   try {
-    await syncBrands(products);
-    await syncCategories(products);
-    const photosFolder = path.resolve("C:\\TORGSOFT\\Photo");
-    const files = await fs.readdir(photosFolder);
+    // await syncBrands(products);
+    // await syncCategories(products);
+    // const photosFolder = path.resolve("C:\\TORGSOFT\\Photo");
+    // const files = await fs.readdir(photosFolder);
 
-    const photoMap = files.reduce((acc, file) => {
-      const match = file.match(/^(\d+)(_?\d*)\.(jpg|png)$/);
-      if (match) {
-        const id = match[1];
-        acc[id] = acc[id] || [];
-        acc[id].push(`http://localhost:3030/photos/${file}`);
-      }
-      return acc;
-    }, {});
+    // const photoMap = files.reduce((acc, file) => {
+    //   const match = file.match(/^(\d+)(_?\d*)\.(jpg|png)$/);
+    //   if (match) {
+    //     const id = match[1];
+    //     acc[id] = acc[id] || [];
+    //     acc[id].push(`http://localhost:3030/photos/${file}`);
+    //   }
+    //   return acc;
+    // }, {});
 
     // Групуємо товари за modelId
     const groupedProducts = products.reduce((acc, product) => {
       console.log("product🎶💖💖💋: ", product);
-      const photos = photoMap[product.id] || [];
+      // const photos = photoMap[product.id] || [];
       // console.log("photos: ", photos[0]);
       const groupKey = product.modelId;
 
       if (!acc[groupKey]) {
         acc[groupKey] = {
-          // name: product.name,
-          modelName: product.modelName,
+          goodId: product.id,
           modelId: product.modelId,
+          name: product.fullName,
+          modelName: product.modelName,
           brand: product.brand,
           country: product.country,
-          categories: product.categories,
+          //Ціни
+          retailPrice: product.retailPrice,
+          discountPrice: product.discountPrice || null,
+          // discount: product.discount || 0,
+          //Наявність
+          quantity: product.quantity,
+          // Характеристики
+          volume: product.volume,
+          tone: product.tone || null,
           measure: product.measure,
-          variations: [],
+          // Ідентифікатори
+          barcode: product.barcode,
+          // categories: product.categories,
+
+          // variations: [],
           randomOrderKey: product.randomOrderKey,
           // skinNeeds: product.skinNeeds.trim() === "" ? null : product.skinNeeds,
         };
       }
 
-      const existingVariation = acc[groupKey].variations.find(
-        (v) => v.idTorgsoft === product.id
-      );
-
-      if (!existingVariation) {
-        acc[groupKey].variations.push({
-          idTorgsoft: product.id,
-          fullName: product.fullName,
-          volume: product.volume,
-          tone: product.tone || null,
-          retailPrice: product.retailPrice,
-          discountPrice: product.discountPrice || null,
-          discount: product.discount || 0,
-          quantity: product.quantity,
-          barcode: product.barcode,
-          image: photos[0],
-          images: photos,
-          slug: `${slugify(product.modelName, {
-            lower: true,
-            strict: true,
-          })}${
-            product.tone ? `-${product.tone}` : ""
-          }-${product.volume.trim()}${slugify(product.measure.trim(), {
-            lower: true,
-            strict: true,
-          })}`,
-          isDefault: false,
-        });
-      }
+      // if (!existingVariation) {
+      //   acc[groupKey].variations.push({
+      //     // image: photos[0],
+      //     // images: photos,
+      //     slug: `${slugify(product.modelName, {
+      //       lower: true,
+      //       strict: true,
+      //     })}${
+      //       product.tone ? `-${product.tone}` : ""
+      //     }-${product.volume.trim()}${slugify(product.measure.trim(), {
+      //       lower: true,
+      //       strict: true,
+      //     })}`,
+      //     isDefault: false,
+      //   });
+      // }
 
       return acc;
     }, {});
@@ -180,27 +179,9 @@ export async function saveProductsToDb(products) {
     const finalProducts = Object.values(groupedProducts);
     // console.log("finalProducts: ", finalProducts);
 
-    for (const product of finalProducts) {
-      if (product.variations.length > 0) {
-        // Знаходимо варіацію з найбільшим об'ємом
-        const defaultVariation = product.variations.reduce((max, variation) => {
-          const currentVolume = parseFloat(variation.volume); // Перетворюємо volume у число
-          const maxVolume = parseFloat(max?.volume || 0); // Перетворюємо max.volume у число
-          return currentVolume > maxVolume ? variation : max;
-        }, null);
-
-        if (defaultVariation) {
-          defaultVariation.isDefault = true; // Встановлюємо isDefault
-        }
-      }
-    }
-
-    for (const product of finalProducts) {
-      if (product.skinNeeds) {
-        await updateFilter("skinNeeds", product.skinNeeds.split(","));
-      }
+    for (const product of products) {
       await Goods.updateOne(
-        { modelId: product.modelId },
+        { goodId: product.id },
         { $set: product },
         { upsert: true }
       );
