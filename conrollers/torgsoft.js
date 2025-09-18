@@ -122,38 +122,38 @@ export async function saveProductsToDb(products) {
 
     // Групуємо товари за modelId
     const groupedProducts = products.reduce((acc, product) => {
-      console.log("product🎶💖💖💋: ", product);
+      // console.log("product🎶💖💖💋: ", product);
       // const photos = photoMap[product.id] || [];
       // console.log("photos: ", photos[0]);
       const groupKey = product.modelId;
 
-      if (!acc[groupKey]) {
-        acc[groupKey] = {
-          goodId: product.id,
-          modelId: product.modelId,
-          name: product.fullName,
-          modelName: product.modelName,
-          brand: product.brand,
-          country: product.country,
-          //Ціни
-          retailPrice: product.retailPrice,
-          discountPrice: product.discountPrice || null,
-          // discount: product.discount || 0,
-          //Наявність
-          quantity: product.quantity,
-          // Характеристики
-          volume: product.volume,
-          tone: product.tone || null,
-          measure: product.measure,
-          // Ідентифікатори
-          barcode: product.barcode,
-          // categories: product.categories,
+      // if (!acc[groupKey]) {
+      //   acc[groupKey] = {
+      //     goodId: product.id,
+      //     modelId: product.modelId,
+      //     name: product.fullName,
+      //     modelName: product.modelName,
+      //     brand: product.brand,
+      //     country: product.country,
+      //     //Ціни
+      //     retailPrice: product.retailPrice,
+      //     discountPrice: product.discountPrice || null,
+      //     // discount: product.discount || 0,
+      //     //Наявність
+      //     quantity: product.quantity,
+      //     // Характеристики
+      //     volume: product.volume,
+      //     tone: product.tone || null,
+      //     measure: product.measure,
+      //     // Ідентифікатори
+      //     barcode: product.barcode,
+      //     // categories: product.categories,
 
-          // variations: [],
-          randomOrderKey: product.randomOrderKey,
-          // skinNeeds: product.skinNeeds.trim() === "" ? null : product.skinNeeds,
-        };
-      }
+      //     // variations: [],
+      //     randomOrderKey: product.randomOrderKey,
+      //     // skinNeeds: product.skinNeeds.trim() === "" ? null : product.skinNeeds,
+      //   };
+      // }
 
       // if (!existingVariation) {
       //   acc[groupKey].variations.push({
@@ -171,7 +171,30 @@ export async function saveProductsToDb(products) {
       //     isDefault: false,
       //   });
       // }
+      if (!acc[groupKey]) {
+        acc[groupKey] = {
+          modelId: product.modelId,
+          modelName: product.modelName,
+          brand: product.brand,
+          country: product.country,
+          // categories: product.categories || [],
+          variations: [],
+        };
+      }
 
+      // додаємо варіацію
+      acc[groupKey].variations.push({
+        goodId: product.id,
+        fullName: product.fullName,
+        // name: product.fullName,
+        barcode: product.barcode,
+        volume: product.volume,
+        tone: product.tone,
+        retailPrice: product.retailPrice,
+        discountPrice: product.discountPrice || null,
+        quantity: product.quantity,
+        // image: product.image || null,
+      });
       return acc;
     }, {});
 
@@ -179,9 +202,9 @@ export async function saveProductsToDb(products) {
     const finalProducts = Object.values(groupedProducts);
     // console.log("finalProducts: ", finalProducts);
 
-    for (const product of products) {
+    for (const product of finalProducts) {
       await Goods.updateOne(
-        { goodId: product.id },
+        { modelId: product.modelId },
         { $set: product },
         { upsert: true }
       );
